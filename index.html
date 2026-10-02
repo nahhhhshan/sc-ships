@@ -57,6 +57,8 @@ header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between
 .brand{font-family:var(--f-disp);font-weight:600;font-size:26px;letter-spacing:.04em;margin:0;line-height:1.1}
 .brand span{color:var(--accent)}
 .lead{margin:4px 0 0;font-size:13px;color:var(--muted);max-width:60ch}
+/* RSI のファンサイト規約で必須の告知。ほかの告知より小さくせず、見える場所に置く */
+.notice{margin:6px 0 0;font-size:13px;color:var(--ink);max-width:90ch;border-left:3px solid var(--line);padding-left:8px}
 .sub{color:var(--muted);font-size:12px;letter-spacing:.04em;display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:4px}
 .sub .ver{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px}
 #storeNote{font-size:12px;color:var(--muted);text-align:right}
@@ -198,6 +200,7 @@ footer{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 1
     <div>
       <h1 class="brand">SC <span data-i18n="brand">船一覧</span></h1>
       <p class="lead" data-i18n="lead">Star Citizen の船と地上車両の性能・価格・購入場所を、絞り込み・並べ替え・比較できる一覧です。</p>
+      <p class="notice"><span>This is an unofficial Star Citizen fan site, not affiliated with the Cloud Imperium group of companies. All content on this site not authored by its host or users are property of their respective owners.</span> <span data-i18n="noticeJa"></span> <a href="https://robertsspaceindustries.com/" target="_blank" rel="noopener" data-i18n="official">公式サイト（RSI）</a></p>
       <div class="sub"><span id="gameVer"></span><span id="fetched"></span><span class="ver" id="appVer"></span></div>
     </div>
     <div class="hright">
@@ -285,13 +288,13 @@ footer{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 1
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="config.js?v=1.2.0"></script>
-<script src="web_backend.js?v=1.2.0"></script>
+<script src="config.js?v=1.2.1"></script>
+<script src="web_backend.js?v=1.2.1"></script>
 <script>
 /* 'artifact'（claude.ai の Artifact。所持の印はこのブラウザに保存）／'web'（GitHub Pages。所持の印は Firebase で共有）。make_web.py が書き換える */
 const MODE = 'web';
-const APP_VERSION = '1.2.0';
-const APP_UPDATED = '2026-10-03 02:42';
+const APP_VERSION = '1.2.1';
+const APP_UPDATED = '2026-10-03 02:45';
 const CMP_MAX = 4;
 const SORT_MAX = 4;
 const PAGES_URL = 'https://nahhhhshan.github.io/sc-ships/';   // 所持リストを共有できる GitHub Pages 版
@@ -308,6 +311,8 @@ const L = (ja, en) => LANG === 'ja' ? ja : en;
 const fmt = (v, d = 0) => v == null || v === '' || Number.isNaN(v) ? '—' : Number(v).toLocaleString(L('ja-JP', 'en-US'), {maximumFractionDigits: d, minimumFractionDigits: 0});
 const STR = {
   brand: ['船一覧', 'Ship List'],
+  noticeJa: ['（Cloud Imperium グループとは関係のない、非公式の Star Citizen ファンサイトです。運営者と利用者が作成したもの以外の内容は、それぞれの権利者に帰属します。）', ''],
+  official: ['公式サイト（RSI）', 'Official site (RSI)'],
   lead: ['Star Citizen の船と地上車両の性能・価格・購入場所を、絞り込み・並べ替え・比較できる一覧です。', 'Every Star Citizen ship and ground vehicle with specs, in-game prices and shops. Filter, sort and compare.'], filtersAria: ['検索と絞り込み', 'Search and filters'],
   search: ['検索', 'Search'], searchPh: ['船名・メーカー・役割（例: cutlass, 貨物）', 'Name, maker or role (e.g. cutlass, freight)'],
   type: ['種別', 'Type'], tShip: ['船', 'Ships'], tGv: ['地上車両', 'Ground vehicles'], all: ['すべて', 'All'],
@@ -811,7 +816,7 @@ async function boot(){
   applyLang();
   bindUI();
   try{
-    DATA = await (await fetch('ships.json?v=1.2.0', {cache: 'no-cache'})).json();
+    DATA = await (await fetch('ships.json?v=1.2.1', {cache: 'no-cache'})).json();
   }catch(e){
     $('tbody').innerHTML = `<tr><td class="empty" colspan="${COLS.length}">${L('船のデータ（ships.json）を読み込めませんでした。ページを読み込み直してください。', 'Could not load the ship data (ships.json). Reload the page.')}</td></tr>`;
     return;
