@@ -232,7 +232,7 @@ footer{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
       <label class="f"><span class="lab" data-i18n="mfr">メーカー</span><select id="mfr"></select></label>
       <label class="f"><span class="lab" data-i18n="career">分類</span><select id="car"></select></label>
       <label class="f"><span class="lab" data-i18n="role">役割</span><select id="role"></select></label>
-      <label class="f"><span class="lab" data-i18n="cminMax">最小乗員 ○人以下</span><input type="number" id="cminMax" min="1" step="1" inputmode="numeric" data-i18n-ph="noLimit"></label>
+      <label class="f"><span class="lab" data-i18n="cminMin">最小乗員 ○人以上</span><input type="number" id="cminMin" min="1" step="1" inputmode="numeric" data-i18n-ph="noLimit"></label>
       <label class="f"><span class="lab" data-i18n="cmaxMin">最大乗員 ○人以上</span><input type="number" id="cmaxMin" min="1" step="1" inputmode="numeric" data-i18n-ph="noLimit"></label>
       <label class="f"><span class="lab" data-i18n="scuMin">積載 SCU 以上</span><input type="number" id="scuMin" min="0" step="1" inputmode="numeric" placeholder="0"></label>
       <label class="f"><span class="lab" data-i18n="priceMax">価格 aUEC 以下</span><input type="number" id="priceMax" min="0" step="100000" inputmode="numeric" data-i18n-ph="noLimit"></label>
@@ -289,13 +289,13 @@ footer{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 1
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="config.js?v=1.2.2"></script>
-<script src="web_backend.js?v=1.2.2"></script>
+<script src="config.js?v=1.2.3"></script>
+<script src="web_backend.js?v=1.2.3"></script>
 <script>
 /* 'artifact'（claude.ai の Artifact。所持の印はこのブラウザに保存）／'web'（GitHub Pages。所持の印は Firebase で共有）。make_web.py が書き換える */
 const MODE = 'web';
-const APP_VERSION = '1.2.2';
-const APP_UPDATED = '2026-10-03 02:48';
+const APP_VERSION = '1.2.3';
+const APP_UPDATED = '2026-10-03 02:52';
 const CMP_MAX = 4;
 const SORT_MAX = 4;
 const PAGES_URL = 'https://nahhhhshan.github.io/sc-ships/';   // 所持リストを共有できる GitHub Pages 版
@@ -318,7 +318,7 @@ const STR = {
   search: ['検索', 'Search'], searchPh: ['船名・メーカー・役割（例: cutlass, 貨物）', 'Name, maker or role (e.g. cutlass, freight)'],
   type: ['種別', 'Type'], tShip: ['船', 'Ships'], tGv: ['地上車両', 'Ground vehicles'], all: ['すべて', 'All'],
   size: ['サイズ', 'Size'], more: ['詳しい条件', 'More filters'], mfr: ['メーカー', 'Manufacturer'], career: ['分類', 'Career'],
-  role: ['役割', 'Role'], cminMax: ['最小乗員 ○人以下', 'Min crew ≤'], cmaxMin: ['最大乗員 ○人以上', 'Max crew ≥'], scuMin: ['積載 SCU 以上', 'Cargo ≥ SCU'],
+  role: ['役割', 'Role'], cminMin: ['最小乗員 ○人以上', 'Min crew ≥'], cmaxMin: ['最大乗員 ○人以上', 'Max crew ≥'], scuMin: ['積載 SCU 以上', 'Cargo ≥ SCU'],
   priceMax: ['価格 aUEC 以下', 'Price ≤ aUEC'], noLimit: ['上限なし', 'No limit'],
   buyable: ['ゲーム内で買える', 'Buyable in game'], rentable: ['レンタルできる', 'Rentable'], owned: ['所持', 'Owned'],
   reset: ['条件をリセット', 'Reset filters'], sortBy: ['並べ替え', 'Sort by'], sortAdd: ['並べ替えの条件を追加', 'Add a sort key'],
@@ -369,7 +369,7 @@ let storeNoteHTML = () => L('所持リストの保存先: <b>このブラウザ<
   + (MODE !== 'web' ? `<br>${L('共有するなら', 'To share it, use the')} <a href="${PAGES_URL}" target="_blank" rel="noopener">${L('Web版', 'web version')}</a>` : '');
 
 /* ---------- 絞り込みと並べ替えの状態 ---------- */
-const DEFAULT = {q:'', type:'ship', size:'', mfr:'', car:'', role:'', cminMax:'', cmaxMin:'', scuMin:'', priceMax:'', buyable:false, rentable:false, mark:''};
+const DEFAULT = {q:'', type:'ship', size:'', mfr:'', car:'', role:'', cminMin:'', cmaxMin:'', scuMin:'', priceMax:'', buyable:false, rentable:false, mark:''};
 const st = Object.assign({}, DEFAULT);
 let sorts = [{k:'n', dir:1}];   // 先頭から順に適用する並べ替えの条件
 const cmp = [];
@@ -405,7 +405,7 @@ function matches(s){
   if(st.mfr && s.m !== st.mfr) return false;
   if(st.car && s.car !== st.car) return false;
   if(st.role && !roleTokens(s).includes(st.role)) return false;
-  if(st.cminMax !== '' && !(crewMin(s) != null && crewMin(s) <= +st.cminMax)) return false;
+  if(st.cminMin !== '' && !(crewMin(s) != null && crewMin(s) >= +st.cminMin)) return false;
   if(st.cmaxMin !== '' && !(crewMax(s) != null && crewMax(s) >= +st.cmaxMin)) return false;
   if(st.scuMin !== '' && (s.scu || 0) < +st.scuMin) return false;
   if(st.priceMax !== '' && !(priceOf(s) != null && priceOf(s) <= +st.priceMax)) return false;
@@ -508,7 +508,7 @@ function render(){
   renderFleet();
   renderCmpBar();
   renderSortUI();
-  const on = ['mfr', 'car', 'role', 'cminMax', 'cmaxMin', 'scuMin', 'priceMax', 'buyable', 'rentable', 'mark'].filter(k => st[k]).length;
+  const on = ['mfr', 'car', 'role', 'cminMin', 'cmaxMin', 'scuMin', 'priceMax', 'buyable', 'rentable', 'mark'].filter(k => st[k]).length;
   $('moreNote').textContent = on ? L(`${on} 件の条件で絞り込み中`, `${on} filter${on > 1 ? 's' : ''} active`) : '';
 }
 
@@ -758,11 +758,11 @@ function bindUI(){
     render();
   });
   segs('typeSeg', 'type'); segs('sizeSeg', 'size');
-  for(const k of ['q', 'mfr', 'car', 'role', 'cminMax', 'cmaxMin', 'scuMin', 'priceMax', 'mark']) $(k).addEventListener('input', () => { st[k] = $(k).value.trim(); render(); });
+  for(const k of ['q', 'mfr', 'car', 'role', 'cminMin', 'cmaxMin', 'scuMin', 'priceMax', 'mark']) $(k).addEventListener('input', () => { st[k] = $(k).value.trim(); render(); });
   for(const k of ['buyable', 'rentable']) $(k).addEventListener('change', () => { st[k] = $(k).checked; render(); });
   $('resetBtn').addEventListener('click', () => {
     Object.assign(st, DEFAULT);
-    for(const k of ['q', 'mfr', 'car', 'role', 'cminMax', 'cmaxMin', 'scuMin', 'priceMax', 'mark']) $(k).value = '';
+    for(const k of ['q', 'mfr', 'car', 'role', 'cminMin', 'cmaxMin', 'scuMin', 'priceMax', 'mark']) $(k).value = '';
     $('buyable').checked = $('rentable').checked = false;
     for(const [id, key] of [['typeSeg', 'type'], ['sizeSeg', 'size']]) $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === DEFAULT[key]));
     render();
@@ -817,7 +817,7 @@ async function boot(){
   applyLang();
   bindUI();
   try{
-    DATA = await (await fetch('ships.json?v=1.2.2', {cache: 'no-cache'})).json();
+    DATA = await (await fetch('ships.json?v=1.2.3', {cache: 'no-cache'})).json();
   }catch(e){
     $('tbody').innerHTML = `<tr><td class="empty" colspan="${COLS.length}">${L('船のデータ（ships.json）を読み込めませんでした。ページを読み込み直してください。', 'Could not load the ship data (ships.json). Reload the page.')}</td></tr>`;
     return;
