@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Star Citizen の船と地上車両の一覧。絞り込み・並べ替え・比較・所持リストの共有。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0c1219">
+<title>SC 船一覧</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+JP:wght@400;500;600&display=swap">
+<style>
+/* 収支帳（StarCitizen収支記録）と同じ配色・書体。上に絞り込み、下に一覧表。詳細と比較は重ねて開く小窓 */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f5f7f9; --ink:#16202b; --muted:#5b6878; --line:#d5dce4;
+  --accent:#0e7490; --accent-soft:#d8eef3; --gold:#9a5b00; --gold-soft:#f6ead6; --pos:#15803d; --neg:#b42318;
+  --shade:rgba(10,20,30,.45);
+  --f-disp:"Chakra Petch","IBM Plex Sans JP",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans JP","Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0c1219; --surface:#131c26; --surface-2:#18232f; --ink:#e3e9f0; --muted:#8594a6; --line:#243140;
+    --accent:#38bdd8; --accent-soft:#12303a; --gold:#e0a93b; --gold-soft:#33270f; --pos:#4ade80; --neg:#f87171;
+    --shade:rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0c1219; --surface:#131c26; --surface-2:#18232f; --ink:#e3e9f0; --muted:#8594a6; --line:#243140;
+  --accent:#38bdd8; --accent-soft:#12303a; --gold:#e0a93b; --gold-soft:#33270f; --pos:#4ade80; --neg:#f87171;
+  --shade:rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55;padding-inline:16px;padding-block:20px 96px;margin:0}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:16px}
+.wrap>*{min-width:0}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+a{color:var(--accent)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:6px 16px}
+.brand{font-family:var(--f-disp);font-weight:600;font-size:26px;letter-spacing:.04em;margin:0;line-height:1.1}
+.brand span{color:var(--accent)}
+.sub{color:var(--muted);font-size:12px;letter-spacing:.04em;display:flex;flex-wrap:wrap;gap:2px 14px;margin-top:4px}
+.sub .ver{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px}
+#storeNote{font-size:12px;color:var(--muted);text-align:right}
+#storeNote b{color:var(--ink);font-weight:500}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+.panel h2{font-family:var(--f-disp);font-size:16px;margin:0 0 6px;letter-spacing:.03em}
+.hint{color:var(--muted);font-size:12.5px;margin:4px 0 0}
+
+.filters{display:grid;gap:12px}
+.filters>summary{cursor:pointer;font-family:var(--f-disp);font-size:14px;letter-spacing:.04em;color:var(--accent);list-style:none}
+.filters>summary::before{content:"▸ "}
+.filters[open]>summary::before{content:"▾ "}
+.filters>summary .muted{font-family:var(--f-body);font-size:12px;margin-left:8px;letter-spacing:0}
+.filters[open]>summary{margin-bottom:-2px}
+.frow{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end}
+.f{display:grid;gap:3px;min-width:0}
+.lab{font-size:11px;color:var(--muted);letter-spacing:.08em}
+input[type=search],input[type=number],input[type=text],select{background:var(--surface-2);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-height:34px;max-width:100%}
+input[type=search]{width:min(320px,100%)}
+select{max-width:min(260px,100%)}
+input[type=number]{width:120px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{background:var(--surface-2);border:0;padding:6px 11px;min-height:34px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--surface);font-weight:500}
+.chk{display:inline-flex;gap:6px;align-items:center;min-height:34px;cursor:pointer;font-size:13px}
+.btn{background:var(--accent);color:var(--surface);border:0;border-radius:4px;padding:7px 14px;min-height:34px;cursor:pointer;font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.small{padding:3px 10px;min-height:28px;font-size:12.5px}
+.btn:disabled{opacity:.45;cursor:default}
+
+.summary{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;font-size:13px;color:var(--muted)}
+.summary b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.fleet{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;font-size:13px;border-left:3px solid var(--gold);padding:4px 0 4px 10px;color:var(--muted)}
+.fleet b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+
+.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line);vertical-align:middle}
+th{position:sticky;top:0;background:var(--surface-2);font-weight:500;font-size:11.5px;color:var(--muted);letter-spacing:.04em;user-select:none}
+th.sortable{cursor:pointer}
+th.sortable:hover{color:var(--ink)}
+th[aria-sort=ascending]::after{content:" ▲";color:var(--accent)}
+th[aria-sort=descending]::after{content:" ▼";color:var(--accent)}
+td.r,th.r{text-align:right}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+.thumb{width:72px;height:40px;object-fit:cover;border-radius:3px;background:var(--surface-2);display:block}
+.thumb.none{display:grid;place-items:center;font-size:10px;color:var(--muted)}
+.nm{font-weight:600}
+.nm small{font-weight:400;color:var(--muted);margin-left:6px;font-size:11px}
+.mf{font-size:11.5px;color:var(--muted)}
+.role{font-size:12.5px}
+.role small{display:block;color:var(--muted);font-size:11px}
+.sz{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);border-radius:3px;padding:0 5px}
+.pill{display:inline-block;font-size:11px;border-radius:999px;padding:0 7px;margin-right:3px;line-height:18px}
+.pill.own{background:var(--gold-soft);color:var(--gold)}
+.pill.want{background:var(--accent-soft);color:var(--accent)}
+.pill.gv{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+td.cmp{width:34px}
+td.cmp input{width:17px;height:17px;cursor:pointer}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+
+@media (max-width:820px){ .hide-m{display:none} }
+@media (max-width:560px){ .hide-s{display:none} .thumb{width:56px;height:32px} }
+
+/* 比較バー（下に固定） */
+.cmpbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(0,0,0,.08)}
+.cmpbar .in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cmpbar .chip{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
+.cmpbar .chip button{background:none;border:0;cursor:pointer;color:var(--muted);padding:0 5px;font-size:15px;line-height:1}
+.cmpbar .grow{flex:1}
+
+/* 小窓 */
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0;width:min(920px,calc(100vw - 24px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:var(--shade)}
+.dhead{display:flex;gap:12px;align-items:start;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--surface);z-index:1}
+.dhead h2{font-family:var(--f-disp);font-size:22px;margin:0;line-height:1.15;text-wrap:balance}
+.dhead .x{background:none;border:1px solid var(--line);border-radius:4px;width:34px;height:34px;cursor:pointer;font-size:18px;flex:none}
+.dbody{padding:14px 16px 18px;display:grid;gap:16px}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+.hero img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:5px;background:var(--surface-2);max-width:100%}
+@media (max-width:640px){ .hero{grid-template-columns:1fr} }
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:3px;padding:1px 7px;background:var(--surface-2)}
+.price{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:13px;align-items:baseline}
+.price .v{font-family:var(--f-mono);font-size:15px}
+.price .v.big{font-size:19px;color:var(--gold)}
+.secs{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.sec h3{font-family:var(--f-disp);font-size:13.5px;letter-spacing:.06em;color:var(--accent);margin:0 0 6px;padding-bottom:3px;border-bottom:1px solid var(--line)}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0;font-size:13px}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0;text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere}
+.mini{width:100%;font-size:12.5px}
+.mini td,.mini th{padding:4px 6px;white-space:normal}
+.mini th{position:static}
+.desc{font-size:13px;color:var(--muted);max-width:70ch;margin:0}
+.links{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px}
+.mine{display:grid;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.mine .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mine ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.mine li{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px}
+.mine li input{flex:1;min-width:140px}
+.cmpt{width:100%}
+.cmpt th{position:static;white-space:normal;vertical-align:bottom;text-align:right}
+.cmpt th:first-child,.cmpt td:first-child{text-align:left;color:var(--muted)}
+.cmpt td{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.cmpt td.best{color:var(--pos);font-weight:600}
+.cmpt tr.grp td{font-family:var(--f-disp);color:var(--accent);text-align:left;background:var(--surface-2);font-size:12px;letter-spacing:.06em}
+.cmpt img{width:120px;max-width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:3px;display:block;margin-left:auto;margin-bottom:4px}
+footer{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 16px}
+@media (prefers-reduced-motion: no-preference){ tbody tr{transition:background .12s} }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1 class="brand">SC <span>船一覧</span></h1>
+      <div class="sub"><span id="gameVer">ゲーム版 —</span><span id="fetched"></span><span class="ver" id="appVer"></span></div>
+    </div>
+    <div id="storeNote"></div>
+  </header>
+
+  <section class="panel filters" aria-label="検索と絞り込み">
+    <div class="frow">
+      <label class="f"><span class="lab">検索</span><input type="search" id="q" placeholder="船名・メーカー・役割（例: cutlass, 貨物）"></label>
+      <div class="f"><span class="lab">種別</span>
+        <div class="seg" id="typeSeg" role="group" aria-label="種別">
+          <button type="button" data-v="ship" aria-pressed="true">船</button>
+          <button type="button" data-v="gv" aria-pressed="false">地上車両</button>
+          <button type="button" data-v="all" aria-pressed="false">すべて</button>
+        </div>
+      </div>
+      <div class="f"><span class="lab">サイズ</span>
+        <div class="seg" id="sizeSeg" role="group" aria-label="サイズ"></div>
+      </div>
+    </div>
+    <details class="filters" id="more" open>
+      <summary>詳しい条件<span class="muted" id="moreNote"></span></summary>
+    <div class="frow">
+      <label class="f"><span class="lab">メーカー</span><select id="mfr"><option value="">すべて</option></select></label>
+      <label class="f"><span class="lab">分類</span><select id="car"><option value="">すべて</option></select></label>
+      <label class="f"><span class="lab">役割</span><select id="role"><option value="">すべて</option></select></label>
+      <label class="f"><span class="lab">必要乗員</span><select id="crew">
+        <option value="">すべて</option><option value="1">1人で動かせる</option><option value="4">4人まで</option><option value="10">10人まで</option><option value="11">11人以上</option>
+      </select></label>
+      <label class="f"><span class="lab">積載 SCU 以上</span><input type="number" id="scuMin" min="0" step="1" inputmode="numeric" placeholder="0"></label>
+      <label class="f"><span class="lab">価格 aUEC 以下</span><input type="number" id="priceMax" min="0" step="100000" inputmode="numeric" placeholder="上限なし"></label>
+    </div>
+    <div class="frow">
+      <label class="chk"><input type="checkbox" id="buyable"> ゲーム内で買える</label>
+      <label class="chk"><input type="checkbox" id="rentable"> レンタルできる</label>
+      <label class="f"><span class="lab">所持</span><select id="mark">
+        <option value="">すべて</option><option value="own">所持している船</option><option value="mine">自分の所持</option><option value="want">欲しい船</option><option value="none">誰も持っていない船</option>
+      </select></label>
+      <label class="f"><span class="lab">並べ替え</span><select id="sort"></select></label>
+      <button class="btn ghost" type="button" id="dirBtn" aria-label="並び順を反転">昇順</button>
+      <button class="btn ghost" type="button" id="resetBtn">条件をリセット</button>
+    </div>
+    </details>
+  </section>
+
+  <section class="panel" id="webPanel" hidden></section>
+
+  <div class="summary" id="summary"></div>
+  <div class="fleet" id="fleet" hidden></div>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"><tr><td class="empty" colspan="14">船のデータを読み込んでいます…</td></tr></tbody>
+    </table>
+  </div>
+
+  <footer>
+    <span>データ: Star Citizen Wiki API（api.star-citizen.wiki）。ゲーム内価格と購入場所は UEX Corp の値を Wiki API 経由で取得。画像: starcitizen.tools</span>
+    <span id="updated"></span>
+  </footer>
+</div>
+
+<div class="cmpbar" id="cmpbar" hidden>
+  <div class="in">
+    <span class="lab">比較</span>
+    <span id="cmpChips" style="display:contents"></span>
+    <span class="grow"></span>
+    <button class="btn ghost small" type="button" id="cmpClear">選択を解除</button>
+    <button class="btn" type="button" id="cmpOpen">並べて比べる</button>
+  </div>
+</div>
+
+<dialog id="detail" aria-labelledby="dTitle"></dialog>
+<dialog id="compare" aria-labelledby="cTitle"></dialog>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js?v=1.0.0"></script>
+<script src="web_backend.js?v=1.0.0"></script>
+<script>
+/* 'artifact'（claude.ai の Artifact。所持の印はこのブラウザに保存）／'web'（GitHub Pages。所持の印は Firebase で共有）。make_web.py が書き換える */
+const MODE = 'web';
+const APP_VERSION = '1.0.0';
+const APP_UPDATED = '2026-10-03 01:41';
+const CMP_MAX = 4;
+const PAGES_URL = 'https://nahhhhshan.github.io/sc-ships/';   // 所持リストを共有できる GitHub Pages 版
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = (v, d = 0) => v == null || v === '' || Number.isNaN(v) ? '—' : Number(v).toLocaleString('ja-JP', {maximumFractionDigits: d, minimumFractionDigits: 0});
+function lsGet(k){ try{ return localStorage.getItem(k) || ''; }catch(e){ return ''; } }
+function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+
+const CAREER = {'Combat':'戦闘','Transporter':'輸送','Transport':'輸送','Exploration':'探索','Industrial':'産業','Competition':'レース','Support':'支援','Multi-Role':'マルチロール','Ground':'地上','Starter':'スターター','Destroyer':'駆逐艦','Gunship':'ガンシップ','Snub Fighter':'スナブ戦闘機'};
+const ROLE = {'Anti-Air':'対空','Anti-Vehicle':'対車両','Bomber':'爆撃機','Cargo':'貨物','Combat':'戦闘','Corvette':'コルベット','Destroyer':'駆逐艦','Dropship':'降下艇','Expedition':'遠征','Frigate':'フリゲート','Generalist':'汎用','Gun Ship':'ガンシップ','Gunship':'ガンシップ','Heavy Bomber':'重爆撃機','Heavy Dropship':'重降下艇','Heavy Fighter':'重戦闘機','Heavy Freight':'大型貨物','Heavy Gunship':'重ガンシップ','Heavy Refueling':'大型給油','Heavy Salvage':'大型サルベージ','Heavy Tank':'重戦車','Interceptor':'迎撃機','Interdiction':'阻止','Light Fighter':'軽戦闘機','Light Freight':'小型貨物','Light Mining':'小型採掘','Light Refueling':'小型給油','Light Salvage':'小型サルベージ','Light Science':'小型科学','Light Tank':'軽戦車','Luxury Touring':'高級旅客','Medical':'医療','Medium Data':'中型データ','Medium Fighter':'中戦闘機','Medium Freight':'中型貨物','Medium Mining':'中型採掘','Medium Salvage':'中型サルベージ','Mining':'採掘','Modular':'モジュール式','Passenger':'旅客','Pathfinder':'探査','Racing':'レース','Recovery':'回収','Reporting':'報道','Snub Carrier':'スナブ母艦','Snub Fighter':'スナブ戦闘機','Starter':'スターター','Stealth Bomber':'ステルス爆撃機','Stealth Fighter':'ステルス戦闘機','Touring':'旅客','Transport':'輸送'};
+const SIZE = {1:'超小型',2:'小型',3:'中型',4:'大型',5:'特大',6:'主力艦'};
+const GRADE = g => g ? 'ABCD'[g - 1] || g : '';
+
+let SHIPS = [], BY_ID = {};
+const roleTokens = s => (s.role || '').split('/').map(t => t.trim()).filter(Boolean);
+const roleJa = s => roleTokens(s).map(t => ROLE[t] || t).join(' / ');
+const szOf = s => s.sz ? Math.min(s.sz, 6) : null;
+const priceOf = s => s.buy && s.buy.length ? s.buy[0][0] : null;
+const rentOf = s => s.rent && s.rent.length ? s.rent[0][0] : null;
+const crewMax = s => (s.crew || [])[1] ?? (s.crew || [])[0] ?? null;
+const crewMin = s => (s.crew || [])[0] ?? null;
+const showVar = s => s.var && s.var.replace(/\s+/g, '').toLowerCase() !== s.n.replace(/[\s-]+/g, '').toLowerCase();
+const imgSrc = s => s.img ? 'img/' + s.id + '.webp' : '';
+
+/* ---------- 所持・欲しいの保存先 ----------
+ * 項目は {id, ship, kind:'own'|'want', by, memo}。web_backend.js（Pages 版）が共有リストに接続すると、add/remove/setMemo を差し替える。 */
+const LOCAL_KEY = 'scships-local-v1';
+const store = {
+  items: [], me: lsGet('scships-name') || lsGet('auec-web-name') || '', shared: false,
+  loadLocal(){ try{ this.items = JSON.parse(lsGet(LOCAL_KEY) || '[]'); }catch(e){ this.items = []; } },
+  saveLocal(){ lsSet(LOCAL_KEY, JSON.stringify(this.items)); },
+  async add(ship, kind){ this.items.push({id: 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ship, kind, by: this.me, memo: ''}); this.saveLocal(); render(); },
+  async remove(id){ this.items = this.items.filter(i => i.id !== id); this.saveLocal(); render(); },
+  async setMemo(id, memo){ const i = this.items.find(i => i.id === id); if(i){ i.memo = memo; this.saveLocal(); } },
+};
+const itemsOf = ship => store.items.filter(i => i.ship === ship);
+
+/* ---------- 絞り込みの状態 ---------- */
+const DEFAULT = {q:'', type:'ship', size:'', mfr:'', car:'', role:'', crew:'', scuMin:'', priceMax:'', buyable:false, rentable:false, mark:'', sort:'n', dir:1};
+const st = Object.assign({}, DEFAULT);
+const cmp = [];
+
+const COLS = [
+  {k:'cmp', label:'比較', cls:'cmp'},
+  {k:'img', label:'', cls:'hide-s'},
+  {k:'n', label:'船名', get:s => s.n.toLowerCase(), sortable:true},
+  {k:'role', label:'役割', get:s => roleJa(s), sortable:true, cls:'hide-s'},
+  {k:'sz', label:'サイズ', get:szOf, sortable:true, cls:'hide-m'},
+  {k:'crew', label:'乗員', get:crewMax, sortable:true, r:true, cls:'hide-m'},
+  {k:'scu', label:'積載 SCU', get:s => s.scu || 0, sortable:true, r:true},
+  {k:'scm', label:'SCM m/s', get:s => s.scm, sortable:true, r:true, cls:'hide-m'},
+  {k:'shp', label:'シールド', get:s => s.shp, sortable:true, r:true, cls:'hide-m'},
+  {k:'hp', label:'機体HP', get:s => s.hp, sortable:true, r:true, cls:'hide-m'},
+  {k:'dps', label:'DPS', get:s => (s.dps || 0) + (s.tdps || 0), sortable:true, r:true, cls:'hide-m'},
+  {k:'price', label:'価格 aUEC', get:priceOf, sortable:true, r:true},
+  {k:'msrp', label:'MSRP $', get:s => s.msrp, sortable:true, r:true, cls:'hide-s'},
+  {k:'mark', label:'所持', get:s => itemsOf(s.id).filter(i => i.kind === 'own').length, sortable:true, cls:'hide-s'},
+];
+const SORTS = [['n','船名'],['scu','積載 SCU'],['price','価格 aUEC'],['msrp','MSRP $'],['crew','乗員'],['sz','サイズ'],['scm','SCM 速度'],['shp','シールド'],['hp','機体HP'],['dps','DPS'],['role','役割'],['mark','所持']];
+
+function matches(s){
+  if(st.type === 'ship' && s.gv) return false;
+  if(st.type === 'gv' && !s.gv) return false;
+  if(st.size && String(szOf(s)) !== st.size) return false;
+  if(st.mfr && s.m !== st.mfr) return false;
+  if(st.car && s.car !== st.car) return false;
+  if(st.role && !roleTokens(s).includes(st.role)) return false;
+  if(st.crew){
+    const c = crewMin(s) ?? 1, lim = +st.crew;
+    if(lim === 11 ? c < 11 : c > lim) return false;
+  }
+  if(st.scuMin !== '' && (s.scu || 0) < +st.scuMin) return false;
+  if(st.priceMax !== '' && !(priceOf(s) != null && priceOf(s) <= +st.priceMax)) return false;
+  if(st.buyable && priceOf(s) == null) return false;
+  if(st.rentable && rentOf(s) == null) return false;
+  if(st.mark){
+    const its = itemsOf(s.id);
+    if(st.mark === 'own' && !its.some(i => i.kind === 'own')) return false;
+    if(st.mark === 'mine' && !its.some(i => i.kind === 'own' && i.by === store.me)) return false;
+    if(st.mark === 'want' && !its.some(i => i.kind === 'want')) return false;
+    if(st.mark === 'none' && its.some(i => i.kind === 'own')) return false;
+  }
+  if(st.q){
+    const hay = [s.n, s.var, s.m, s.mc, s.role, roleJa(s), s.car, CAREER[s.car]].join(' ').toLowerCase();
+    if(!st.q.toLowerCase().split(/\s+/).every(w => hay.includes(w))) return false;
+  }
+  return true;
+}
+
+function sorted(list){
+  const col = COLS.find(c => c.k === st.sort) || COLS[2];
+  return list.slice().sort((a, b) => {
+    const x = col.get(a), y = col.get(b);
+    const xe = x == null || x === '', ye = y == null || y === '';
+    if(xe || ye) return xe && ye ? a.n.localeCompare(b.n) : xe ? 1 : -1;   // 値のない船は常に末尾
+    const d = typeof x === 'string' ? x.localeCompare(y, 'ja') : x - y;
+    return d * st.dir || a.n.localeCompare(b.n);
+  });
+}
+
+function markPills(s){
+  const its = itemsOf(s.id);
+  const own = its.filter(i => i.kind === 'own'), want = its.filter(i => i.kind === 'want');
+  const who = arr => esc([...new Set(arr.map(i => i.by || '自分'))].join('・'));
+  return (own.length ? `<span class="pill own" title="${who(own)}">所持 ${own.length}</span>` : '')
+       + (want.length ? `<span class="pill want" title="${who(want)}">欲しい</span>` : '');
+}
+
+function cell(c, s){
+  const cls = (c.r ? 'r ' : '') + (c.cls || '');
+  let h;
+  switch(c.k){
+    case 'cmp': h = `<input type="checkbox" data-cmp="${esc(s.id)}" ${cmp.includes(s.id) ? 'checked' : ''} aria-label="${esc(s.n)} を比較に追加">`; break;
+    case 'img': h = s.img ? `<img class="thumb" loading="lazy" alt="" src="${esc(imgSrc(s))}" onerror="this.style.visibility='hidden'">` : '<span class="thumb none">画像なし</span>'; break;
+    case 'n': h = `<div class="nm">${esc(s.n)}${showVar(s) ? `<small>${esc(s.var)}</small>` : ''}</div><div class="mf">${esc(s.m)}${s.gv ? ' <span class="pill gv">地上車両</span>' : ''}</div>`; break;
+    case 'role': h = `<div class="role">${esc(roleJa(s)) || '—'}<small>${esc(CAREER[s.car] || s.car)}</small></div>`; break;
+    case 'sz': h = szOf(s) ? `<span class="sz" title="${SIZE[szOf(s)]}">S${szOf(s)}</span>` : '—'; break;
+    case 'crew': { const a = crewMin(s), b = crewMax(s); h = `<span class="num">${a == null ? '—' : a === b || b == null ? a : a + '–' + b}</span>`; break; }
+    case 'price': h = `<span class="num">${fmt(priceOf(s))}</span>`; break;
+    case 'msrp': h = `<span class="num">${s.msrp ? '$' + fmt(s.msrp) : '—'}</span>`; break;
+    case 'dps': { const v = (s.dps || 0) + (s.tdps || 0); h = `<span class="num">${v ? fmt(v) : '—'}</span>`; break; }
+    case 'mark': h = markPills(s); break;
+    default: h = `<span class="num">${fmt(c.get(s))}</span>`;
+  }
+  return `<td class="${cls}">${h}</td>`;
+}
+
+function render(){
+  if(!SHIPS.length) return;
+  $('thead').innerHTML = COLS.map(c => `<th class="${(c.r ? 'r ' : '') + (c.cls || '') + (c.sortable ? ' sortable' : '')}" ${c.sortable ? `data-sort="${c.k}"` : ''} ${st.sort === c.k ? `aria-sort="${st.dir > 0 ? 'ascending' : 'descending'}"` : ''} scope="col">${c.label}</th>`).join('');
+  const list = sorted(SHIPS.filter(matches));
+  $('tbody').innerHTML = list.length
+    ? list.map(s => `<tr data-id="${esc(s.id)}">${COLS.map(c => cell(c, s)).join('')}</tr>`).join('')
+    : `<tr><td class="empty" colspan="${COLS.length}">条件に合う船はありません。条件をゆるめるか「条件をリセット」を押してください。</td></tr>`;
+  const scu = list.reduce((t, s) => t + (s.scu || 0), 0);
+  const buyable = list.filter(s => priceOf(s) != null).length;
+  $('summary').innerHTML = `<span><b>${list.length}</b> / ${SHIPS.length} 隻</span><span>ゲーム内で買える <b>${buyable}</b> 隻</span><span>表示中の積載合計 <b>${fmt(scu)}</b> SCU</span>`;
+  renderFleet();
+  renderCmpBar();
+  $('dirBtn').textContent = st.dir > 0 ? '昇順' : '降順';
+  const on = ['mfr', 'car', 'role', 'crew', 'scuMin', 'priceMax', 'buyable', 'rentable', 'mark'].filter(k => st[k]).length;
+  $('moreNote').textContent = on ? `${on} 件の条件で絞り込み中` : '';
+}
+
+function renderFleet(){
+  const own = store.items.filter(i => i.kind === 'own' && BY_ID[i.ship]);
+  const want = store.items.filter(i => i.kind === 'want' && BY_ID[i.ship]);
+  const box = $('fleet');
+  box.hidden = !own.length && !want.length;
+  if(box.hidden) return;
+  const scu = own.reduce((t, i) => t + (BY_ID[i.ship].scu || 0), 0);
+  const value = own.reduce((t, i) => t + (priceOf(BY_ID[i.ship]) || 0), 0);
+  const people = {};
+  own.forEach(i => { const k = i.by || '自分'; people[k] = (people[k] || 0) + 1; });
+  box.innerHTML = `<span>${store.shared ? '共有リスト' : '所持リスト'}</span><span>所持 <b>${own.length}</b> 隻</span><span>積載合計 <b>${fmt(scu)}</b> SCU</span>`
+    + (value ? `<span>ゲーム内価格の合計 <b>${fmt(value)}</b> aUEC</span>` : '')
+    + `<span>欲しい <b>${want.length}</b> 隻</span>`
+    + (Object.keys(people).length > 1 || store.shared ? Object.entries(people).map(([k, n]) => `<span>${esc(k)} <b>${n}</b></span>`).join('') : '');
+}
+
+/* ---------- 比較 ---------- */
+function toggleCmp(id, on){
+  const i = cmp.indexOf(id);
+  if(on && i < 0){ if(cmp.length >= CMP_MAX){ render(); flash(`比較できるのは ${CMP_MAX} 隻までです`); return; } cmp.push(id); }
+  if(!on && i >= 0) cmp.splice(i, 1);
+  render();
+}
+function renderCmpBar(){
+  $('cmpbar').hidden = !cmp.length;
+  $('cmpChips').innerHTML = cmp.map(id => `<span class="chip">${esc(BY_ID[id].n)}<button type="button" data-uncmp="${esc(id)}" aria-label="${esc(BY_ID[id].n)} を外す">×</button></span>`).join('');
+  $('cmpOpen').disabled = cmp.length < 2;
+  $('cmpOpen').textContent = cmp.length < 2 ? 'もう1隻選ぶと比べられます' : `${cmp.length} 隻を並べて比べる`;
+}
+let flashTimer;
+function flash(msg){
+  const el = $('storeNote');
+  const keep = el.dataset.keep ?? el.innerHTML;
+  el.dataset.keep = keep;
+  el.innerHTML = `<b>${esc(msg)}</b>`;
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => { el.innerHTML = el.dataset.keep; delete el.dataset.keep; }, 2600);
+}
+
+// [見出し, 値の取り出し, 表示, 良い向き（1:大きいほど良い / -1:小さいほど良い / 0:比べない）]
+const METRICS = [
+  ['基本'],
+  ['メーカー', s => s.m, v => esc(v), 0],
+  ['役割', s => roleJa(s), v => esc(v), 0],
+  ['サイズ', szOf, v => v ? `S${v} ${SIZE[v]}` : '—', 0],
+  ['乗員（最小〜最大）', s => (s.crew || []).join('–'), v => esc(v) || '—', 0],
+  ['全長 m', s => (s.dim || [])[0], v => fmt(v, 1), 0],
+  ['質量 kg', s => s.mass, v => fmt(v), 0],
+  ['積載'],
+  ['貨物 SCU', s => s.scu || 0, v => fmt(v), 1],
+  ['鉱石 SCU', s => s.ore, v => fmt(v), 1],
+  ['個人保管 SCU', s => s.inv, v => fmt(v, 2), 1],
+  ['ベッド', s => s.beds, v => fmt(v), 1],
+  ['飛行'],
+  ['SCM m/s', s => s.scm, v => fmt(v), 1],
+  ['最高速度 m/s', s => s.vmax, v => fmt(v), 1],
+  ['ブースト m/s', s => s.boost, v => fmt(v), 1],
+  ['ピッチ °/s', s => (s.ag || [])[0], v => fmt(v), 1],
+  ['ヨー °/s', s => (s.ag || [])[1], v => fmt(v), 1],
+  ['ロール °/s', s => (s.ag || [])[2], v => fmt(v), 1],
+  ['量子速度 km/s', s => s.qs, v => fmt(v), 1],
+  ['量子航続 Gm', s => s.qr, v => fmt(v, 1), 1],
+  ['防御・武装'],
+  ['機体HP', s => s.hp, v => fmt(v), 1],
+  ['シールド HP', s => s.shp, v => fmt(v), 1],
+  ['操縦席 DPS', s => s.dps, v => fmt(v), 1],
+  ['砲塔 DPS', s => s.tdps, v => fmt(v), 1],
+  ['ミサイル 発', s => s.mis, v => fmt(v), 1],
+  ['価格'],
+  ['ゲーム内価格 aUEC', priceOf, v => fmt(v), -1],
+  ['レンタル 1日 aUEC', rentOf, v => fmt(v), -1],
+  ['MSRP $', s => s.msrp, v => v ? '$' + fmt(v) : '—', -1],
+  ['保険の請求 分', s => (s.ins || [])[0], v => fmt(v, 1), -1],
+];
+function openCompare(){
+  const ships = cmp.map(id => BY_ID[id]);
+  let rows = '';
+  for(const [label, get, show, better] of METRICS){
+    if(!get){ rows += `<tr class="grp"><td colspan="${ships.length + 1}">${label}</td></tr>`; continue; }
+    const vals = ships.map(get);
+    if(vals.every(v => v == null || v === '')) continue;   // どの船にも値がない項目は出さない
+    const nums = vals.filter(v => typeof v === 'number' && v > 0);
+    const best = better && nums.length > 1 && new Set(nums).size > 1 ? (better > 0 ? Math.max(...nums) : Math.min(...nums)) : null;
+    rows += `<tr><td>${label}</td>${vals.map(v => `<td class="${best != null && v === best ? 'best' : ''}">${v == null || v === '' ? '—' : show(v)}</td>`).join('')}</tr>`;
+  }
+  const d = $('compare');
+  d.innerHTML = `<div class="dhead"><div><h2 id="cTitle">${ships.length} 隻の比較</h2><div class="hint">緑の数字がその項目でいちばん良い値です（価格と保険の時間は小さいほど良い）。</div></div><button class="x" type="button" data-close aria-label="閉じる">×</button></div>
+    <div class="dbody"><div class="tablebox"><table class="cmpt"><thead><tr><th></th>${ships.map(s => `<th>${s.img ? `<img alt="" src="${esc(imgSrc(s))}" onerror="this.remove()">` : ''}<a href="#" data-open="${esc(s.id)}">${esc(s.n)}</a>${showVar(s) ? `<div class="muted">${esc(s.var)}</div>` : ''}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  if(!d.open) d.showModal();
+}
+
+/* ---------- 詳細 ---------- */
+const kv = pairs => `<dl class="kv">${pairs.filter(p => p[1] != null && p[1] !== '' && p[1] !== '—').map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+const shopTable = (rows, head) => `<table class="mini"><thead><tr><th>${head}</th><th>場所</th><th class="r">aUEC</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r[1])}</td><td>${esc(r[2])}${r[3] ? `<span class="muted">（${esc(r[3])}）</span>` : ''}</td><td class="r num">${fmt(r[0])}</td></tr>`).join('')}</tbody></table>`;
+
+function openDetail(id){
+  const s = BY_ID[id]; if(!s) return;
+  const d = $('detail');
+  const sz = szOf(s);
+  const crew = s.crew ? (s.crew[0] === s.crew[1] || s.crew[1] == null ? s.crew[0] : s.crew.join('〜')) : null;
+  const sections = [];
+  sections.push(['基本', kv([
+    ['寸法（長×幅×高）', s.dim ? s.dim.map(v => fmt(v, 1)).join(' × ') + ' m' : null],
+    ['質量', s.mass ? fmt(s.mass) + ' kg' : null],
+    ['乗員', crew != null ? crew + ' 人' : null],
+    ['ベッド', s.beds ? fmt(s.beds) : null],
+    ['医療ベッド', s.med || null],
+    ['追加されたバージョン', s.added ? esc(s.added) : null],
+  ])]);
+  sections.push(['積載', kv([
+    ['貨物', fmt(s.scu || 0) + ' SCU'],
+    ['鉱石', s.ore ? fmt(s.ore) + ' SCU' : null],
+    ['個人保管', s.inv ? fmt(s.inv, 2) + ' SCU' : null],
+  ])]);
+  if(s.scm || s.qs) sections.push(['飛行', kv([
+    ['SCM 速度', s.scm ? fmt(s.scm) + ' m/s' : null],
+    ['最高速度', s.vmax ? fmt(s.vmax) + ' m/s' : null],
+    ['ブースト（前進）', s.boost ? fmt(s.boost) + ' m/s' : null],
+    ['ピッチ / ヨー / ロール', s.ag ? s.ag.map(v => fmt(v)).join(' / ') + ' °/s' : null],
+    ['量子速度', s.qs ? fmt(s.qs) + ' km/s' : null],
+    ['量子航続距離', s.qr ? fmt(s.qr, 1) + ' Gm' : null],
+    ['量子燃料', s.qf ? fmt(s.qf, 1) + ' SCU' : null],
+    ['水素燃料', s.hf ? fmt(s.hf, 1) + ' SCU' : null],
+  ])]);
+  sections.push(['防御', kv([
+    ['機体HP', s.hp ? fmt(s.hp) : null],
+    ['シールド HP', s.shp ? fmt(s.shp) : null],
+    ['シールド方式', s.sft ? ({Bubble:'全周（Bubble）', Quadrant:'4面（Quadrant）', FrontBack:'前後（FrontBack）'}[s.sft] || esc(s.sft)) : null],
+    ['保険の請求', s.ins && s.ins[0] ? fmt(s.ins[0], 1) + ' 分' : null],
+    ['早期請求', s.ins && s.ins[1] ? `${fmt(s.ins[1], 1)} 分 / ${fmt(s.ins[2])} aUEC` : null],
+  ])]);
+  const arm = [];
+  arm.push(kv([
+    ['操縦席 DPS', s.dps ? fmt(s.dps) : null],
+    ['砲塔 DPS', s.tdps ? fmt(s.tdps) : null],
+    ['ミサイル', s.mis ? `${fmt(s.mis)} 発${s.misd ? `（計 ${fmt(s.misd)} ダメージ）` : ''}` : null],
+    ['武器ハードポイント', s.guns ? s.guns.map(([sz, n]) => `S${sz}×${n}`).join('、') : null],
+    ['ミサイルラック', s.racks ? s.racks.map(([k, sz, n]) => `${k} S${sz}×${n}`).join('、') : null],
+    ['砲塔', s.turrets ? s.turrets.map(([k, w, n]) => `${k}（${w}）×${n}`).join('、') : null],
+  ]));
+  if(s.weapons) arm.push(`<table class="mini"><thead><tr><th>標準の武器</th><th class="r">数</th></tr></thead><tbody>${s.weapons.map(([n, c]) => `<tr><td>${esc(n)}</td><td class="r num">${c}</td></tr>`).join('')}</tbody></table>`);
+  if(s.dps || s.tdps || s.guns || s.turrets || s.weapons) sections.push(['武装', arm.join('')]);
+  if(s.parts) sections.push(['標準装備', `<table class="mini"><thead><tr><th>部品</th><th>名前</th><th class="r">サイズ</th><th class="r">グレード</th></tr></thead><tbody>${s.parts.map(([k, n, sz, g, c]) => `<tr><td>${k}${c > 1 ? ` ×${c}` : ''}</td><td>${esc(n)}</td><td class="r num">S${sz}</td><td class="r num">${GRADE(g)}</td></tr>`).join('')}</tbody></table>`]);
+  if(s.buy) sections.push(['購入できる場所', shopTable(s.buy, '店')]);
+  if(s.rent) sections.push(['レンタルできる場所（1日）', shopTable(s.rent, '店')]);
+
+  const its = itemsOf(s.id);
+  const mine = `<div class="mine">
+    <div class="row"><b>${store.shared ? '共有リスト' : '所持リスト'}</b>
+      <button class="btn small" type="button" data-add="own">所持に追加</button>
+      <button class="btn ghost small" type="button" data-add="want">欲しいに追加</button>
+      <span class="hint">${store.shared ? '共有リストの全員に見えます。' : 'このブラウザだけに保存されます。'}</span></div>
+    ${its.length ? `<ul>${its.map(i => `<li><span class="pill ${i.kind}">${i.kind === 'own' ? '所持' : '欲しい'}</span><span>${esc(i.by || '自分')}</span>
+      <input type="text" id="memo-${esc(i.id)}" data-memo="${esc(i.id)}" maxlength="200" placeholder="メモ（塗装・保険・置き場所など）" value="${esc(i.memo || '')}">
+      <button class="btn ghost small" type="button" data-del="${esc(i.id)}">外す</button></li>`).join('')}</ul>` : ''}
+  </div>`;
+
+  d.dataset.id = s.id;
+  d.innerHTML = `<div class="dhead"><div><div class="mf">${esc(s.m)}${s.mc ? ` · ${esc(s.mc)}` : ''}</div><h2 id="dTitle">${esc(s.n)}</h2>${showVar(s) ? `<div class="muted">${esc(s.var)}</div>` : ''}</div>
+      <button class="x" type="button" data-close aria-label="閉じる">×</button></div>
+    <div class="dbody">
+      <div class="hero">
+        ${s.img ? `<img alt="${esc(s.n)}" src="${esc(imgSrc(s))}" onerror="this.remove()">` : ''}
+        <div>
+          <div class="tags">
+            ${s.car ? `<span class="tag">${esc(CAREER[s.car] || s.car)}</span>` : ''}
+            ${roleTokens(s).map(t => `<span class="tag" title="${esc(t)}">${esc(ROLE[t] || t)}</span>`).join('')}
+            ${sz ? `<span class="tag">S${sz} ${SIZE[sz]}</span>` : ''}
+            ${s.gv ? '<span class="tag">地上車両</span>' : ''}
+          </div>
+          <div class="price">
+            <span class="muted">ゲーム内価格</span><span class="v big">${priceOf(s) != null ? fmt(priceOf(s)) + ' aUEC' : '<span class="muted" style="font-size:13px">ゲーム内では買えない</span>'}</span>
+            ${rentOf(s) != null ? `<span class="muted">レンタル 1日</span><span class="v">${fmt(rentOf(s))} aUEC〜</span>` : ''}
+            ${s.msrp ? `<span class="muted">MSRP</span><span class="v">$${fmt(s.msrp)}${s.wb ? ` <span class="muted" style="font-size:12px">（Warbond $${fmt(s.wb)}）</span>` : ''}</span>` : ''}
+            ${s.avail ? `<span class="muted">公式ストア</span><span>${esc({'Always available':'常時販売', 'Time-limited sales':'期間限定の販売', 'Limited sales':'限定販売'}[s.avail] || s.avail)}</span>` : ''}
+          </div>
+          <div class="links" style="margin-top:10px">
+            ${s.wiki ? `<a href="${esc(s.wiki)}" target="_blank" rel="noopener">starcitizen.tools</a>` : ''}
+            ${s.pledge ? `<a href="${esc(s.pledge)}" target="_blank" rel="noopener">RSI 公式ストア</a>` : ''}
+            <a href="https://uexcorp.space/vehicles" target="_blank" rel="noopener">UEX Corp</a>
+          </div>
+        </div>
+      </div>
+      ${mine}
+      <div class="secs">${sections.map(([h, b]) => `<section class="sec"><h3>${h}</h3>${b}</section>`).join('')}</div>
+      ${s.desc ? `<section class="sec"><h3>説明（英語・ゲーム内テキスト）</h3><p class="desc">${esc(s.desc)}</p></section>` : ''}
+    </div>`;
+  if(!d.open) d.showModal();
+}
+// 共有リストが他の人の操作で変わったとき、開いている詳細も描き直す（メモの入力中は除く）
+function refreshDetail(){
+  const d = $('detail');
+  if(!d.open || !d.dataset.id || document.activeElement?.matches('[data-memo]')) return;
+  openDetail(d.dataset.id);
+}
+
+/* ---------- 画面の操作 ---------- */
+function bindFilters(){
+  const sizes = [...new Set(SHIPS.map(szOf).filter(Boolean))].sort();
+  $('sizeSeg').innerHTML = `<button type="button" data-v="" aria-pressed="true">すべて</button>` + sizes.map(z => `<button type="button" data-v="${z}" aria-pressed="false" title="${SIZE[z]}">S${z}</button>`).join('');
+  const opts = (sel, entries) => { $(sel).insertAdjacentHTML('beforeend', entries.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')); };
+  const count = f => { const c = {}; SHIPS.forEach(s => [].concat(f(s)).forEach(k => { if(k) c[k] = (c[k] || 0) + 1; })); return c; };
+  const mf = count(s => s.m);
+  opts('mfr', Object.keys(mf).sort().map(k => [k, `${k}（${mf[k]}）`]));
+  const cr = count(s => s.car);
+  opts('car', Object.keys(cr).sort((a, b) => cr[b] - cr[a]).map(k => [k, `${CAREER[k] || k}（${cr[k]}）`]));
+  const rl = count(roleTokens);
+  opts('role', Object.keys(rl).sort((a, b) => (ROLE[a] || a).localeCompare(ROLE[b] || b, 'ja')).map(k => [k, `${ROLE[k] || k}  ${ROLE[k] ? k : ''}（${rl[k]}）`]));
+  opts('sort', SORTS);
+
+  const segs = (id, key) => $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    st[key] = b.dataset.v;
+    $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    render();
+  });
+  segs('typeSeg', 'type'); segs('sizeSeg', 'size');
+  for(const k of ['q', 'mfr', 'car', 'role', 'crew', 'scuMin', 'priceMax', 'mark']) $(k).addEventListener('input', () => { st[k] = $(k).value.trim(); render(); });
+  for(const k of ['buyable', 'rentable']) $(k).addEventListener('change', () => { st[k] = $(k).checked; render(); });
+  $('sort').addEventListener('change', () => { st.sort = $('sort').value; st.dir = defaultDir(st.sort); render(); });
+  $('dirBtn').addEventListener('click', () => { st.dir = -st.dir; render(); });
+  $('resetBtn').addEventListener('click', () => {
+    Object.assign(st, DEFAULT);
+    for(const k of ['q', 'mfr', 'car', 'role', 'crew', 'scuMin', 'priceMax', 'mark']) $(k).value = '';
+    $('buyable').checked = $('rentable').checked = false;
+    $('sort').value = 'n';
+    for(const id of ['typeSeg', 'sizeSeg']) $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.v === DEFAULT[id === 'typeSeg' ? 'type' : 'size']));
+    render();
+  });
+  $('thead').addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]'); if(!th) return;
+    if(st.sort === th.dataset.sort) st.dir = -st.dir; else { st.sort = th.dataset.sort; st.dir = defaultDir(st.sort); }
+    $('sort').value = st.sort;
+    render();
+  });
+  $('tbody').addEventListener('click', e => {
+    const c = e.target.closest('input[data-cmp]');
+    if(c){ toggleCmp(c.dataset.cmp, c.checked); return; }
+    if(e.target.closest('td.cmp')) return;
+    const tr = e.target.closest('tr[data-id]'); if(tr) openDetail(tr.dataset.id);
+  });
+  $('cmpChips').addEventListener('click', e => { const b = e.target.closest('[data-uncmp]'); if(b) toggleCmp(b.dataset.uncmp, false); });
+  $('cmpClear').addEventListener('click', () => { cmp.length = 0; render(); });
+  $('cmpOpen').addEventListener('click', openCompare);
+
+  for(const d of [$('detail'), $('compare')]){
+    d.addEventListener('click', e => {
+      if(e.target === d || e.target.closest('[data-close]')){ d.close(); return; }
+      const o = e.target.closest('[data-open]');
+      if(o){ e.preventDefault(); $('compare').close(); openDetail(o.dataset.open); }
+    });
+  }
+  const det = $('detail');
+  det.addEventListener('click', async e => {
+    const a = e.target.closest('[data-add]'), x = e.target.closest('[data-del]');
+    try{
+      if(a){ await store.add(det.dataset.id, a.dataset.add); openDetail(det.dataset.id); }
+      if(x){ await store.remove(x.dataset.del); openDetail(det.dataset.id); }
+    }catch(err){ flash('保存できませんでした: ' + (err.message || err.code || err)); }
+  });
+  det.addEventListener('change', e => {
+    const m = e.target.closest('[data-memo]');
+    if(m) store.setMemo(m.dataset.memo, m.value.trim()).then(() => flash('メモを保存しました'), err => flash('メモを保存できませんでした: ' + (err.message || err.code || err)));
+  });
+}
+const defaultDir = k => ['n', 'role', 'price', 'msrp', 'sz'].includes(k) ? 1 : -1;   // 数値の項目は大きい順から
+
+async function boot(){
+  $('appVer').textContent = 'v' + APP_VERSION;
+  $('updated').textContent = `アプリ更新 ${APP_UPDATED}`;
+  let data;
+  try{
+    data = await (await fetch('ships.json?v=1.0.0', {cache: 'no-cache'})).json();
+  }catch(e){
+    $('tbody').innerHTML = `<tr><td class="empty" colspan="${COLS.length}">船のデータ（ships.json）を読み込めませんでした。ページを読み込み直してください。</td></tr>`;
+    return;
+  }
+  SHIPS = data.ships; SHIPS.forEach(s => BY_ID[s.id] = s);
+  $('gameVer').textContent = 'ゲーム版 ' + (data.version || '不明');
+  $('fetched').textContent = 'データ取得 ' + (data.fetched || '');
+  store.loadLocal();
+  $('storeNote').innerHTML = '所持リストの保存先: <b>このブラウザ</b>';
+  if(MODE !== 'web') $('storeNote').innerHTML += `<br>共有するなら <a href="${PAGES_URL}" target="_blank" rel="noopener">Web版</a>`;
+  bindFilters();
+  if(matchMedia('(max-width: 640px)').matches) $('more').open = false;
+  render();
+  if(MODE === 'web' && typeof initWeb === 'function') initWeb();
+}
+boot();
+</script>
+</body>
+</html>
