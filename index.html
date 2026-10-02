@@ -45,7 +45,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55;padding-inline:16px;padding-block:20px 96px;margin:0}
-.wrap{max-width:1180px;margin:0 auto;display:grid;gap:16px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:16px}
 .wrap>*{min-width:0}
 .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
@@ -96,20 +96,23 @@ input[type=number]{width:120px}
 
 .tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:6px 7px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line);vertical-align:middle}
-/* 船名と役割は折り返して、表が枠の幅に収まるようにする（数値の列は折り返さない） */
+th,td{padding:6px 5px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line);vertical-align:middle}
+/* 役割は折り返して、表が枠の幅に収まるようにする */
 td.wrap{white-space:normal;min-width:9em}
-td.wrap .nm{overflow-wrap:anywhere}
+/* 船名は1行のまま。下の行のメーカー名とバリエーション名だけ折り返す */
+td.name{white-space:normal;min-width:12em}
+td.name .nm{white-space:nowrap}
+td.name .nm small{display:block;white-space:normal;margin-left:0}
 th{position:sticky;top:0;background:var(--surface-2);font-weight:500;font-size:11.5px;color:var(--muted);letter-spacing:.04em;user-select:none}
 th.sortable{cursor:pointer}
 th.sortable:hover{color:var(--ink)}
-th[aria-sort=ascending]::after{content:" ▲";color:var(--accent)}
-th[aria-sort=descending]::after{content:" ▼";color:var(--accent)}
+th[data-dir=asc]::after{content:" ▲";color:var(--accent)}
+th[data-dir=desc]::after{content:" ▼";color:var(--accent)}
 td.r,th.r{text-align:right}
 tbody tr{cursor:pointer}
 tbody tr:hover{background:var(--surface-2)}
 tbody tr:last-child td{border-bottom:0}
-.thumb{width:72px;height:40px;object-fit:cover;border-radius:3px;background:var(--surface-2);display:block}
+.thumb{width:64px;height:36px;object-fit:cover;border-radius:3px;background:var(--surface-2);display:block}
 .thumb.none{display:grid;place-items:center;font-size:10px;color:var(--muted)}
 .nm{font-weight:600}
 .nm small{font-weight:400;color:var(--muted);margin-left:6px;font-size:11px}
@@ -125,12 +128,14 @@ td.cmp{width:34px}
 td.cmp input{width:17px;height:17px;cursor:pointer}
 .empty{padding:28px;text-align:center;color:var(--muted)}
 
-@media (max-width:1000px){ .hide-m{display:none} }
-@media (max-width:640px){ .hide-s{display:none} .thumb{width:56px;height:32px} }
+/* 船名を1行のまま収めるため、画面が狭くなるほど列を減らす（l → m → s の順に隠す） */
+@media (max-width:1230px){ .hide-l{display:none} }
+@media (max-width:1080px){ .hide-m{display:none} }
+@media (max-width:850px){ .hide-s{display:none} .thumb{width:56px;height:32px} }
 
 /* 比較バー（下に固定） */
 .cmpbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(0,0,0,.08)}
-.cmpbar .in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cmpbar .in{max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .cmpbar .chip{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px;font-size:12.5px;display:inline-flex;align-items:center;gap:4px}
 .cmpbar .chip button{background:none;border:0;cursor:pointer;color:var(--muted);padding:0 5px;font-size:15px;line-height:1}
 .cmpbar .grow{flex:1}
@@ -182,7 +187,6 @@ footer{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 1
 .schip button{background:none;border:0;cursor:pointer;padding:3px 9px;min-height:28px}
 .schip .dir{color:var(--accent);font-weight:600;margin-left:2px}
 .schip .rm{color:var(--muted);border-left:1px solid var(--line);padding:3px 8px}
-th .sno{font-family:var(--f-mono);font-size:9.5px;color:var(--accent);vertical-align:super;margin-left:2px}
 @media (max-width:560px){ .hright{justify-items:start} }
 </style>
 </head>
@@ -279,13 +283,13 @@ th .sno{font-family:var(--f-mono);font-size:9.5px;color:var(--accent);vertical-a
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="config.js?v=1.1.1"></script>
-<script src="web_backend.js?v=1.1.1"></script>
+<script src="config.js?v=1.1.2"></script>
+<script src="web_backend.js?v=1.1.2"></script>
 <script>
 /* 'artifact'（claude.ai の Artifact。所持の印はこのブラウザに保存）／'web'（GitHub Pages。所持の印は Firebase で共有）。make_web.py が書き換える */
 const MODE = 'web';
-const APP_VERSION = '1.1.1';
-const APP_UPDATED = '2026-10-03 02:09';
+const APP_VERSION = '1.1.2';
+const APP_UPDATED = '2026-10-03 02:22';
 const CMP_MAX = 4;
 const SORT_MAX = 4;
 const PAGES_URL = 'https://nahhhhshan.github.io/sc-ships/';   // 所持リストを共有できる GitHub Pages 版
@@ -364,7 +368,7 @@ const cmp = [];
 const COLS = [
   {k:'cmp', label:() => L('比較', 'Cmp'), cls:'cmp'},
   {k:'img', label:() => '', cls:'hide-s'},
-  {k:'n', label:() => L('船名', 'Name'), get:s => s.n.toLowerCase(), sortable:true, cls:'wrap'},
+  {k:'n', label:() => L('船名', 'Name'), get:s => s.n.toLowerCase(), sortable:true, cls:'name'},
   {k:'m', label:() => L('メーカー', 'Maker'), get:s => s.m, sortable:true, hidden:true},
   {k:'role', label:() => L('役割', 'Role'), get:s => roleText(s), sortable:true, cls:'hide-s wrap'},
   {k:'sz', label:() => L('サイズ', 'Size'), get:szOf, sortable:true, cls:'hide-m'},
@@ -373,8 +377,8 @@ const COLS = [
   {k:'scm', label:() => 'SCM m/s', get:s => s.scm, sortable:true, r:true, cls:'hide-m'},
   {k:'vmax', label:() => L('最高速度', 'Max speed'), get:s => s.vmax, sortable:true, r:true, hidden:true},
   {k:'shp', label:() => L('シールド', 'Shield'), get:s => s.shp, sortable:true, r:true, cls:'hide-m'},
-  {k:'hp', label:() => L('機体HP', 'Hull HP'), get:s => s.hp, sortable:true, r:true, cls:'hide-m'},
-  {k:'dps', label:() => 'DPS', get:s => (s.dps || 0) + (s.tdps || 0) || null, sortable:true, r:true, cls:'hide-m'},
+  {k:'hp', label:() => L('機体HP', 'Hull HP'), get:s => s.hp, sortable:true, r:true, cls:'hide-l'},
+  {k:'dps', label:() => 'DPS', get:s => (s.dps || 0) + (s.tdps || 0) || null, sortable:true, r:true, cls:'hide-l'},
   {k:'qr', label:() => L('量子航続', 'QT range'), get:s => s.qr, sortable:true, r:true, hidden:true},
   {k:'price', label:() => L('価格 aUEC', 'Price aUEC'), get:priceOf, sortable:true, r:true},
   {k:'rent', label:() => L('レンタル aUEC', 'Rent aUEC'), get:rentOf, sortable:true, r:true, hidden:true},
@@ -482,8 +486,8 @@ function render(){
   $('thead').innerHTML = shown.map(c => {
     const i = sorts.findIndex(o => o.k === c.k);
     const aria = i === 0 ? `aria-sort="${sorts[0].dir > 0 ? 'ascending' : 'descending'}"` : '';
-    const mark = i > 0 ? `<span class="sno">${sorts[i].dir > 0 ? '▲' : '▼'}${i + 1}</span>` : i === 0 && sorts.length > 1 ? '<span class="sno">1</span>' : '';
-    return `<th class="${(c.r ? 'r ' : '') + (c.cls || '') + (c.sortable ? ' sortable' : '')}" ${c.sortable ? `data-sort="${c.k}"` : ''} ${aria} scope="col">${c.label()}${mark}</th>`;
+    const dir = i >= 0 ? `data-dir="${sorts[i].dir > 0 ? 'asc' : 'desc'}"` : '';
+    return `<th class="${(c.r ? 'r ' : '') + (c.cls || '') + (c.sortable ? ' sortable' : '')}" ${c.sortable ? `data-sort="${c.k}"` : ''} ${aria} ${dir} scope="col">${c.label()}</th>`;
   }).join('');
   const list = sorted(SHIPS.filter(matches));
   $('tbody').innerHTML = list.length
@@ -806,7 +810,7 @@ async function boot(){
   applyLang();
   bindUI();
   try{
-    DATA = await (await fetch('ships.json?v=1.1.1', {cache: 'no-cache'})).json();
+    DATA = await (await fetch('ships.json?v=1.1.2', {cache: 'no-cache'})).json();
   }catch(e){
     $('tbody').innerHTML = `<tr><td class="empty" colspan="${COLS.length}">${L('船のデータ（ships.json）を読み込めませんでした。ページを読み込み直してください。', 'Could not load the ship data (ships.json). Reload the page.')}</td></tr>`;
     return;
